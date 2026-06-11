@@ -1,0 +1,117 @@
+{
+  "url": "opc.tcp://192.168.0.1:4840",
+  "piston1": {
+    "node_id": "ns=4;i=2",
+    "type": "Boolean",
+    "value": false,
+    "description": ""
+  },
+  "piston2": {
+    "node_id": "ns=4;i=5",
+    "type": "Boolean",
+    "value": false,
+    "description": ""
+  },
+  "motor_state": {
+    "node_id": "ns=4;i=3",
+    "type": "Boolean",
+    "value": false,
+    "description": ""
+  },
+  "motor_speed": {
+    "node_id": "ns=4;i=4",
+    "type": "Int16",
+    "value": 0,
+    "description": ""
+  },
+  "DeviceManual": {
+    "node_id": "ns=3;s=DeviceManual",
+    "type": "String",
+    "value": "https://support.industry.siemens.com/cs/ww/en/view/109743003",
+    "description": "Address (pathname in the file system or a URL | Web address) of user manual for the device"
+  },
+  "DeviceRevision": {
+    "node_id": "ns=3;s=DeviceRevision",
+    "type": "String",
+    "value": "6ES7 215-1AG40-0XB0  V04.05.02",
+    "description": "Overall revision level of the device"
+  },
+  "EngineeringRevision": {
+    "node_id": "ns=3;s=EngineeringRevision",
+    "type": "String",
+    "value": "V16.0",
+    "description": "Revision Level of the engineering environment."
+  },
+  "HardwareRevision": {
+    "node_id": "ns=3;s=HardwareRevision",
+    "type": "String",
+    "value": "12",
+    "description": "Revision level of the hardware of the device"
+  },
+  "Manufacturer": {
+    "node_id": "ns=3;s=Manufacturer",
+    "type": "LocalizedText",
+    "value": "Siemens AG",
+    "description": "Name of the company that manufactured the device"
+  },
+  "Model": {
+    "node_id": "ns=3;s=Model",
+    "type": "LocalizedText",
+    "value": "CPU 1215C DC/DC/DC",
+    "description": "Model name of the device"
+  },
+  "OperatingMode": {
+    "node_id": "ns=3;s=OperatingMode",
+    "type": "SimaticOperatingState",
+    "value": 8,
+    "description": "Shows the current operating state of your PLC."
+  },
+  "OrderNumber": {
+    "node_id": "ns=3;s=OrderNumber",
+    "type": "String",
+    "value": "6ES7 215-1AG40-0XB0 ",
+    "description": "Order number of your device (MFLB)"
+  },
+  "RevisionCounter": {
+    "node_id": "ns=3;s=RevisionCounter",
+    "type": "Int32",
+    "value": -1,
+    "description": "An incremental counter indicating the number of times the static data within the Device has been modified"
+  },
+  "SerialNumber": {
+    "node_id": "ns=3;s=SerialNumber",
+    "type": "String",
+    "value": "S V-NOC10133    ",
+    "description": "Identifier that uniquely identifies, within a manufacturer, a device instance"
+  },
+  "SoftwareRevision": {
+    "node_id": "ns=3;s=SoftwareRevision",
+    "type": "String",
+    "value": "V04.05.02",
+    "description": "Revision level of the software/firmware of the device"
+  },
+  "Icon": {
+    "node_id": "ns=3;i=6010",
+    "type": "ImagePNG",
+    "value": "b'\\x89PNG\\r\\n\\x1a\\n\\x00\\x00\\x00\\rIHDR\\x00\\x00\\x000\\x00\\x00\\x000\\x08\\x06\\x00\\x00\\x00W\\x02\\xf9\\x87\\x00\\x00\\x00\\tpHYs\\x00\\x00\\x0b\\x13\\x00\\x00\\x0b\\x13\\x01\\x00\\x9a\\x9c\\x18\\x00\\x00\\x00\\x07tIME\\x07\\xe3\\x04\\x18\\x0f\\x04$o\\x1a|\\xd4\\x00\\x00\\x00\\x07tEXtAuthor\\x00\\xa9\\xae\\xccH\\x00\\x00\\x00\\x0ctEXtDescription\\x00\\x13\\t!#\\x00\\x00\\x00\\ntEXtCopyright\\x00\\xac\\x0f\\xcc:\\x00\\x00\\x00\\x0etEXtCreation time\\x005\\xf7\\x0f\\t\\x00\\x00\\x00\\ttEXtSoftware\\x00]p\\xff:\\x00\\x00\\x00\\x0btEXtDisclaimer\\x00\\xb7\\xc0\\xb4\\x8f\\x00\\x00\\x00\\x08tEXtWarning\\x00\\xc0\\x1b\\xe6\\x87\\x00\\x00\\x00\\x07tEXtSource\\x00\\xf5\\xff\\x83\\xeb\\x00\\x00\\x00\\x08tEXtComment\\x00\\xf6\\xcc\\x96\\xbf\\x00\\x00\\x00\\x06tEXtTitle\\x00\\xa8\\xee\\xd2\\'\\x00\\x00\\x02\\x18IDATh\\x81\\xed\\x9aKk\\x13Q\\x18\\x86\\x9f1qb\\x15\\x154\\xd8E\\xe3\\x85\\x18\\x85.\\x84\\xae\\xaa.j\\xb1\\xb8q_\\x14\\xff@\\x17\\xea&\\xbb\\xf9\\x07NWYT\\x10\\xfc\\x03Eq\\x19h\\x91.\\xc4M\\x8d\\xa8\\x88\\xab\\xd6\\x82\\xa8\\xb3)x!E\\xc4i.\\xf3\\xb9\\xe8\\x88x\\xc9\\x9939\\xd1$p\\x1e\\x18\\x86\\xc39\\xf3\\xcd\\xfbq\\x18\\xe6\\x81\\x19GD\\x18fv\\xf5;\\x80)C\\xdf@6i\\xc1\\x93b\\xe4\\x8a\\xc8\\x9c\\xc0\\xac \\xe7#\\x11\\x04Y\\x8d\\x84\\x07\\x82\\xdc\\xbd\\xf8.\\xd7\\xf8\\xfd\\x9aj\\xe1\\x8bD\"D\\x08?\\xce\"\\xd1/\\xe3?\\xe7\\x7f\\x8e%>\\xdf\\xf8t\\xdcI\\xca\\xa7\\xdc\\x81ZQ\\xc6\\x80\\x1a\\xb0\\x00L\\x03n|L\\x03\\x0bQ\\xa6\\xf5r\\xb9T?\\x9at\\x93n){\\xfe\\xb5\\xa45\\x1d\\x1bxZ\\x14\\x17X\\x02&:^\\xdc\\xce\\x8e;\\xe2<\\xae\\xccV\\x0fv\\x17\\xd1\\x1c\\xd5\\x0e\\xcc\\x01g\\x92\\nd\\x9b\\xb9\\x13\\xa3A\\xe9V\\xd9\\xf3\\xfb\\xf2<\\xa9nzU\\xb7\\xc8\\x81z~\\x06(\\x99\\xc7I\\x8f\\xaa\\x81I\\xdd\"n\\xb8\\xf7$p\\xcc<Nzz\\xb4\\xed\\xd2\\x02\\x0e\\xf7\\xa6V:T\\r<\\xd7-\\xd2\\xc8\\x85\\x01\\x10\\x99\\xc7I\\x8f\\xaa\\x81{\\xbaE\\xea\\xf9\\xcdU\\xa0n\\x1e\\'=\\xaa\\x06\\xee\\xb43\\xad\\xd7I\\x05\\x9an\\x18\\xbc:\\xf7p\\x05x\\xdf\\xbbX\\xfatl`\\xf2\\x8d\\xd3hgZ\\x97\\x9a\\xbb\\xb7\\xdfvZ\\xd3p\\xc3\\xe0\\xd9Tu\\xbe\\xe9n\\x7f\\x046\\xfeE\\xc0$\\x94*1\\xb56\\x12\\xdc\\xbe\\xb24Q\\x08N\\xcf\\xef\\xdf\\xca_\\xd8\\xf3m\\xdf8@8\\xf2u\\xfd\\xf3\\xa1\\xcd\\xda\\x8b\\xb3\\xcb+q\\xf8G\\x15\\xdf\\xeb\\xcb3\\x90\\xe8B7\\xef_\\xde*{\\xfeu\\xe0\\x14P\\x00\\x8e\\xc4S\\x1f\\x80\\x00\\xd8\\xe8Wx\\xd0h\\x00 \\x0e\\xb8\\x1e\\x1f\\x03\\x85\\xd5\\xe9\\xbf\\xe9\\xf4\\xffd\\xa0uZ\\x07\\xab\\xd3V\\xa7\\r\\xb1:\\xbd\\x83\\xd5\\xe9\\xae\\xb1:mu\\xda\\x10\\xab\\xd3X\\x9d6\\xc3\\xea\\xb4\\xd5iC\\xacN[\\x9d6\\xc4\\xea\\xf4\\x0eV\\xa7\\xbb\\xc6\\xea\\xb4\\xd5iC\\x86^\\xa7\\x1d\\x9d\\x9f=\\xe2\\x97T*\\x9d\\xd6\\xf9H\\xadC\\xc5\\xf7\\x16U\\xf3Z\\r\\x0c2C\\xaf\\xd3\\xdf\\x01\\x86\\x93\\x9e\\x1f\\x02}\\xc2\\xaf\\x00\\x00\\x00\\x00IEND\\xaeB`\\x82'",
+    "description": ""
+  },
+  "Categoria3": {
+    "node_id": "ns=4;i=6",
+    "type": "Boolean",
+    "value": false,
+    "description": ""
+  },
+  "Categoria2": {
+    "node_id": "ns=4;i=7",
+    "type": "Boolean",
+    "value": true,
+    "description": ""
+  },
+  "Categoria1": {
+    "node_id": "ns=4;i=8",
+    "type": "Boolean",
+    "value": true,
+    "description": ""
+  }
+}
