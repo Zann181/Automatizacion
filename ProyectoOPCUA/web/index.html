@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Dashboard industrial para clasificación de mercancía con visión artificial y OPC-UA">
+    <title>Sistema de Clasificación | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-inner">
+        <div class="header-brand">
+            <div class="brand-icon" id="brand-gear">⚙</div>
+            <div class="brand-text">
+                <h1>Sistema de Clasificación</h1>
+                <span class="brand-sub">Raspberry Pi · OPC-UA · Visión Artificial</span>
+            </div>
+        </div>
+        <div class="header-status">
+            <a href="camera.html" class="cam-launch-btn" title="Abrir módulo de cámara">
+                📷 <span>Cámara QR</span>
+            </a>
+            <div class="status-badge" id="opc-badge">
+                <span class="status-dot" id="opc-dot"></span>
+                <span id="opc-status-text">Conectando...</span>
+            </div>
+            <div class="status-badge fsm-badge">
+                <span class="mono" id="fsm-state-text">IDLE</span>
+            </div>
+            <div class="clock mono" id="clock">--:--:--</div>
+        </div>
+    </div>
+    <!-- Nav tabs -->
+    <nav class="tab-nav" role="tablist">
+        <button class="tab-btn active" id="tab-btn-cam"     onclick="switchTab('cam')"     role="tab" aria-selected="true">📷 Cámara</button>
+        <button class="tab-btn"        id="tab-btn-kpi"     onclick="switchTab('kpi')"     role="tab">📊 KPIs</button>
+        <button class="tab-btn"        id="tab-btn-events"  onclick="switchTab('events')"  role="tab">📋 Eventos</button>
+        <button class="tab-btn"        id="tab-btn-config"  onclick="switchTab('config')"  role="tab">⚙ Config</button>
+        <button class="tab-btn"        id="tab-btn-terminal" onclick="switchTab('terminal')" role="tab">💻 Consola</button>
+    </nav>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+<!-- ================================================================
+     TAB 1: CÁMARA (RF1, RF2 — getUserMedia + jsQR)
+     ================================================================ -->
+<section id="tab-cam" class="tab-content active">
+
+    <!-- Info SSL si no es HTTPS -->
+    <div class="alert-banner" id="ssl-warning" style="display:none">
+        ⚠ <strong>Se requiere HTTPS</strong> para acceder a la cámara en dispositivos móviles.
+        Abre: <strong id="https-url">https://&lt;IP-RPi&gt;:8443</strong>
+    </div>
+
+    <div class="cam-layout">
+
+        <!-- ---- Panel principal: Video ---- -->
+        <div class="cam-panel">
+            <div class="cam-header">
+                <h2>Cámara en Vivo <span class="live-dot" id="cam-live-dot" style="display:none"></span></h2>
+                <div class="cam-fps mono" id="fps-counter">-- FPS</div>
+            </div>
+
+            <!-- Contenedor del video -->
+            <div class="video-wrap" id="video-wrap">
+                <!-- Placeholder cuando la camara esta apagada -->
+                <div class="video-placeholder" id="video-placeholder">
+                    <div class="placeholder-icon">📷</div>
+                    <p>Activa la cámara para comenzar</p>
+                    <p class="placeholder-sub">Se usará la cámara trasera de tu dispositivo móvil.<br>
+                    El sistema detectará automáticamente los códigos QR.</p>
+                </div>
+
+                <!-- Video real -->
+                <video id="camera-video" autoplay playsinline muted></video>
+
+                <!-- Canvas superpuesto para dibujar el bounding box del QR -->
+                <canvas id="qr-overlay" class="qr-overlay"></canvas>
+
+                <!-- Badge de QR detectado (aparece sobre el video) -->
+                <div class="qr-flash" id="qr-flash"></div>
+            </div>
+
+            <!-- Controles de la cámara -->
+            <div class="cam-controls">
+                <button class="btn-cam-start" id="btn-cam-start" onclick="startCamera()">
+                    ▶ Activar Cámara
+                </button>
+                <button class="btn-cam-stop" id="btn-cam-stop" onclick="stopCamera()" style="display:none">
+                    ■ Detener Cámara
+                </button>
+                <button class="btn-cam-flip" id="btn-cam-flip" onclick="flipCamera()" style="display:none" title="Cambiar cámara frontal/trasera">
+                    🔄
+                </button>
+                <div class="cam-toggle-wrap">
+                    <label class="toggle-label">Auto-enviar QR</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-send" checked>
+                        <span class="toggle-thumb"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Cooldown bar (evita doble envio del mismo QR) -->
+            <div class="cooldown-wrap" id="cooldown-wrap" style="display:none">
+                <div class="cooldown-label">Cooldown</div>
+                <div class="cooldown-track">
+                    <div class="cooldown-bar" id="cooldown-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---- Panel lateral: Estado de deteccion ---- -->
+        <div class="cam-sidebar">
+
+            <!-- Ultimo QR detectado -->
+            <div class="detect-card">
+                <div class="detect-header">
+                    <span class="detect-icon">🔍</span>
+                    <span>Último QR Detectado</span>
+                </div>
+                <div class="detect-value mono" id="last-qr-detected">—</div>
+                <div class="detect-cat" id="last-qr-cat">Esperando...</div>
+                <div class="detect-time" id="last-qr-time">—</div>
+            </div>
+
+            <!-- Estadisticas de la sesion de camara -->
+            <div class="detect-card">
+                <div class="detect-header">
+                    <span class="detect-icon">📈</span>
+                    <span>Sesión Actual</span>
+                </div>
+                <div class="session-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">QRs detectados</span>
+                        <span class="stat-val mono" id="stat-detected">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Enviados al PLC</span>
+                        <span class="stat-val mono" id="stat-sent">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Tiempo activa</span>
+                        <span class="stat-val mono" id="stat-time">0:00</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cámara</span>
+                        <span class="stat-val mono" id="stat-cam-facing">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Envio manual (fallback) -->
+            <div class="detect-card">
+                <div class="detect-header">
+                    <span class="detect-icon">✏</span>
+                    <span>Envío Manual</span>
+                </div>
+                <div class="qr-btns-mini">
+                    <button class="btn-mini cat1" onclick="manualSendQR('1')">Cat 1</button>
+                    <button class="btn-mini cat2" onclick="manualSendQR('2')">Cat 2</button>
+                    <button class="btn-mini cat3" onclick="manualSendQR('3')">Cat 3</button>
+                    <button class="btn-mini otro" onclick="manualSendQR('X')">Inválido</button>
+                </div>
+                <div class="manual-row">
+                    <input type="text" id="qr-manual-val" class="input-dark input-sm" placeholder="QR personalizado...">
+                    <button class="btn-secondary" onclick="sendManualCustom()">Enviar</button>
+                </div>
+                <div class="manual-result" id="manual-result"></div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================
+     TAB 2: KPIs (RF5)
+     ================================================================ -->
+<section id="tab-kpi" class="tab-content">
+    <h2 class="section-title">KPIs del Proceso <span class="live-dot"></span></h2>
+    <div class="kpi-grid">
+
+        <!-- Motor (RF5.1) -->
+        <div class="kpi-card" id="card-motor">
+            <div class="kpi-header">
+                <span class="kpi-icon">⚡</span>
+                <span class="kpi-label">Velocidad Motor</span>
+            </div>
+            <div class="kpi-value-wrap">
+                <span class="kpi-value mono" id="motor-speed">0.0</span>
+                <span class="kpi-unit">RPM</span>
+            </div>
+            <div class="motor-bar-wrap"><div class="motor-bar" id="motor-bar"></div></div>
+            <div class="kpi-status" id="motor-state-label">■ DETENIDO</div>
+        </div>
+
+        <!-- Piston 1 (RF5.2) -->
+        <div class="kpi-card" id="card-p1">
+            <div class="kpi-header">
+                <span class="kpi-icon">🔩</span>
+                <span class="kpi-label">Pistón 1 — Categoría 1</span>
+            </div>
+            <div class="piston-indicator">
+                <div class="piston-visual" id="piston1-visual"></div>
+                <div class="piston-body"></div>
+            </div>
+            <div class="kpi-status" id="piston1-label">● INACTIVO</div>
+            <div class="kpi-sub">Activación @ 2.0s tras inicio de motor</div>
+        </div>
+
+        <!-- Piston 2 (RF5.2) -->
+        <div class="kpi-card" id="card-p2">
+            <div class="kpi-header">
+                <span class="kpi-icon">🔩</span>
+                <span class="kpi-label">Pistón 2 — Categoría 2</span>
+            </div>
+            <div class="piston-indicator">
+                <div class="piston-visual" id="piston2-visual"></div>
+                <div class="piston-body"></div>
+            </div>
+            <div class="kpi-status" id="piston2-label">● INACTIVO</div>
+            <div class="kpi-sub">Activación @ 4.0s tras inicio de motor</div>
+        </div>
+
+        <!-- Conteos (RF5.3) -->
+        <div class="kpi-card kpi-totals">
+            <div class="kpi-header">
+                <span class="kpi-icon">📦</span>
+                <span class="kpi-label">Conteo por Categoría</span>
+            </div>
+            <div class="counts-grid">
+                <div class="count-item cat1">
+                    <span class="count-num" id="count-cat1">0</span>
+                    <span class="count-label">Cat. 1</span>
+                    <div class="count-bar-wrap"><div class="count-bar" id="bar-cat1"></div></div>
+                </div>
+                <div class="count-item cat2">
+                    <span class="count-num" id="count-cat2">0</span>
+                    <span class="count-label">Cat. 2</span>
+                    <div class="count-bar-wrap"><div class="count-bar" id="bar-cat2"></div></div>
+                </div>
+                <div class="count-item cat3">
+                    <span class="count-num" id="count-cat3">0</span>
+                    <span class="count-label">Cat. 3</span>
+                    <div class="count-bar-wrap"><div class="count-bar" id="bar-cat3"></div></div>
+                </div>
+                <div class="count-item otro">
+                    <span class="count-num" id="count-otro">0</span>
+                    <span class="count-label">Inválido</span>
+                    <div class="count-bar-wrap"><div class="count-bar" id="bar-otro"></div></div>
+                </div>
+            </div>
+            <div class="total-line">Total: <strong id="total-classified">0</strong> cajas clasificadas</div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================
+     TAB 3: EVENTOS (RF4)
+     ================================================================ -->
+<section id="tab-events" class="tab-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 class="section-title" style="margin:0">Historial de Clasificaciones</h2>
+        <button class="btn-secondary" onclick="fetchEvents()">↻ Actualizar</button>
+    </div>
+    <div class="table-wrap">
+        <table class="events-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp (ISO 8601)</th>
+                    <th>Código QR</th>
+                    <th>Categoría</th>
+                    <th>Actuación</th>
+                </tr>
+            </thead>
+            <tbody id="events-body">
+                <tr><td colspan="5" class="empty-row">Sin eventos registrados aún.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ================================================================
+     TAB 4: CONFIGURACION
+     ================================================================ -->
+<section id="tab-config" class="tab-content">
+
+    <!-- OPC-UA -->
+    <div class="config-card">
+        <h2 class="config-card-title">⚙ Configuración OPC-UA</h2>
+        <div class="config-grid">
+            <div class="config-item">
+                <label class="input-label" for="opc-ip">IP del PLC</label>
+                <input type="text" id="opc-ip" class="input-dark" placeholder="192.168.0.7">
+            </div>
+            <div class="config-item">
+                <label class="input-label" for="opc-port">Puerto</label>
+                <input type="number" id="opc-port" class="input-dark" placeholder="4840">
+            </div>
+            <div class="config-item config-wide">
+                <label class="input-label" for="opc-endpoint">Endpoint URL</label>
+                <input type="text" id="opc-endpoint" class="input-dark" placeholder="opc.tcp://192.168.0.7:4840">
+            </div>
+        </div>
+        <button class="btn-primary" id="btn-reconnect" onclick="reconnectOpc()">Guardar y Reconectar OPC-UA</button>
+    </div>
+
+    <!-- Variables OPC -->
+    <div class="config-card" style="margin-top:20px">
+        <h2 class="config-card-title">📡 Variables OPC-UA Monitoreadas</h2>
+        <div class="config-grid">
+            <div class="config-item">
+                <label class="input-label" for="var-name">Nombre</label>
+                <input type="text" id="var-name" class="input-dark" placeholder="ej: Temperatura">
+            </div>
+            <div class="config-item">
+                <label class="input-label" for="var-node">NodeId</label>
+                <input type="text" id="var-node" class="input-dark" placeholder="ej: s=Temperatura">
+            </div>
+        </div>
+        <button class="btn-secondary" onclick="addVariable()">+ Agregar Variable</button>
+        <div class="table-wrap" style="margin-top:16px">
+            <table class="events-table">
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>NodeId</th><th>Tipo</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="var-table"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ================================================================
+     TAB 5: TERMINAL / CONSOLA PLC Y LOGS
+     ================================================================ -->
+<section id="tab-terminal" class="tab-content">
+    <div class="terminal-layout">
+        <!-- Panel Izquierdo: Terminal interactiva -->
+        <div class="terminal-panel">
+            <div class="terminal-header">
+                <div class="terminal-header-title">
+                    <h2>Consola Interactiva PLC</h2>
+                    <span class="terminal-help">Escribe comandos para comunicarte directamente con el PLC</span>
+                </div>
+            </div>
+            
+            <div class="terminal-screen" id="terminal-screen">
+                <div class="terminal-line system">Sistema de Consola Industrial listo.</div>
+                <div class="terminal-line info">Comandos válidos: status, reconnect, write &lt;nombre_var&gt; &lt;valor&gt;, qr &lt;valor&gt;</div>
+            </div>
+            
+            <div class="terminal-input-wrap">
+                <span class="prompt">&gt;</span>
+                <input type="text" id="terminal-input" class="terminal-input" placeholder="Escribe un comando y presiona Enter..." onkeydown="handleTerminalKey(event)">
+                <button class="btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="sendTerminalCommand()">Enviar</button>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Logs del sistema en tiempo real -->
+        <div class="logs-panel">
+            <div class="terminal-header">
+                <div class="terminal-header-title">
+                    <h2>Logs del Sistema</h2>
+                    <span class="terminal-help">Eventos y diagnósticos del servidor</span>
+                </div>
+                <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fetchLogs()">Refrescar</button>
+            </div>
+            <div class="logs-container" id="logs-container">
+                <div class="log-entry INFO">
+                    <div class="log-meta">
+                        <span class="log-level">INFO</span>
+                        <span class="log-time">--:--:--</span>
+                    </div>
+                    <div class="log-msg">Cargando logs...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="toast"></div>
+
+<!-- jsQR (descargado localmente por el Makefile) -->
+<script src="js/jsqr.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
