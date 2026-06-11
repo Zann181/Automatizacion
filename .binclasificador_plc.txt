@@ -1,0 +1,2 @@
+cd ~/ProyectoOPCUA
+./bin/clasificador_plc

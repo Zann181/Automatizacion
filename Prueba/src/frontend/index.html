@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PLC Control Interface</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script defer src="/static/jsqr.min.js"></script>
+    <script defer src="/static/app.js"></script>
+</head>
+<body>
+    <header>
+        <h1>PLC Control Dashboard</h1>
+    </header>
+    <main class="glass">
+        <section class="control-section">
+            <h2>Pistons</h2>
+            <div class="toggle">
+                <label for="piston1">Piston 1</label>
+                <input type="checkbox" id="piston1" />
+            </div>
+            <div class="toggle">
+                <label for="piston2">Piston 2</label>
+                <input type="checkbox" id="piston2" />
+            </div>
+        </section>
+        <section class="control-section">
+            <h2>Motor Speed</h2>
+            <input type="number" id="motorSpeed" min="0" placeholder="Enter speed" />
+            <button id="setSpeedBtn">Set Speed</button>
+        </section>
+        <section class="status-section">
+            <h2>Status</h2>
+            <pre id="statusBox">Fetching status…</pre>
+        </section>
+        <section class="camera-section" style="text-align: center; margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <h2>QR Scanner</h2>
+            <div style="position: relative; display: inline-block; margin: 15px 0;">
+                <video id="video" autoplay playsinline muted style="width: 100%; max-width: 400px; border-radius: 8px; background: #000; display: block;"></video>
+                <canvas id="scan-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"></canvas>
+            </div>
+            <div>
+                <button id="btn-camera">Start Camera</button>
+            </div>
+            <p id="qr-status" style="margin-top: 10px; font-weight: bold; min-height: 24px;">Waiting for camera...</p>
+        </section>
+    </main>
+    <button id="settingsBtn" style="position:fixed;bottom:20px;right:20px;z-index:1000;">Settings</button>
+    <div id="settingsModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1001;">
+        <div style="background:#fff;padding:20px;border-radius:8px;min-width:300px;">
+            <h3>PLC Settings</h3>
+            <label>Motor off duration (s): <input type="number" id="motorOffDuration" step="0.1" min="0"></label><br>
+            <label>Category 1 duration (s): <input type="number" id="cat1Duration" step="0.1" min="0"></label><br>
+            <label>Category 2 duration (s): <input type="number" id="cat2Duration" step="0.1" min="0"></label><br>
+            <label>Category 3 duration (s): <input type="number" id="cat3Duration" step="0.1" min="0"></label><br>
+            <label>Auto execute: <input type="checkbox" id="autoExecute"></label><br>
+            <button id="saveSettingsBtn">Save</button>
+            <button id="closeSettingsBtn">Close</button>
+        </div>
+    </div>
+</body>
+</html>

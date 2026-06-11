@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador PLC Industrial</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050508; --card: #0c0c12; --border: #00ff8833;
+  --g: #00ff88; --b: #0088ff; --r: #ff3344; --y: #ffaa00;
+  --dim: #2a5a3a; --text: #b0e8c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;padding:16px}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);margin-bottom:16px;background:linear-gradient(90deg,#050508,#0a160c)}
+h1{font-family:'Orbitron',monospace;font-size:1.3rem;color:var(--g);text-shadow:0 0 20px #00ff8833;letter-spacing:3px}
+.pulse{width:11px;height:11px;border-radius:50%;background:var(--r);transition:.3s}
+.pulse.on{background:var(--g);box-shadow:0 0 10px var(--g);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{box-shadow:0 0 5px var(--g)}50%{box-shadow:0 0 18px var(--g)}}
+#statusTxt{margin-left:auto;font-size:.8rem;color:var(--r)}
+.grid{display:grid;grid-template-columns:260px 1fr 260px;gap:14px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--g),transparent)}
+.card h3{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--dim);letter-spacing:3px;margin-bottom:14px;text-transform:uppercase}
+label{display:block;font-size:.65rem;color:var(--dim);letter-spacing:1px;margin-bottom:4px}
+input,select{width:100%;background:#030305;border:1px solid #00ff8822;color:var(--g);padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:.9rem;border-radius:4px;outline:none;margin-bottom:10px;transition:.2s}
+input:focus,select:focus{border-color:var(--g);box-shadow:0 0 8px #00ff8822}
+.btn{width:100%;padding:11px;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;border:none;border-radius:4px;cursor:pointer;transition:.2s;margin-bottom:7px}
+.btn-g{background:linear-gradient(135deg,#00aa55,#00ff88);color:#000}
+.btn-g:hover:not(:disabled){box-shadow:0 0 20px #00ff8855;transform:translateY(-1px)}
+.btn-r{background:linear-gradient(135deg,#aa1122,#ff3344);color:#fff}
+.btn:disabled{opacity:.25;cursor:not-allowed;transform:none!important}
+/* Gauges */
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gc{display:flex;flex-direction:column;align-items:center;padding:10px 5px}
+.gl{font-size:.65rem;color:var(--dim);letter-spacing:2px;margin-bottom:6px}
+.gv{font-family:'Orbitron',monospace;font-size:1.3rem;margin-top:4px;text-shadow:0 0 12px currentColor}
+/* Motor circle */
+.motor-ring{width:88px;height:88px;border-radius:50%;border:3px solid var(--r);display:flex;align-items:center;justify-content:center;margin:8px auto;transition:.5s;color:var(--r);font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;box-shadow:0 0 6px #ff334422}
+.motor-ring.on{border-color:var(--g);color:var(--g);box-shadow:0 0 22px #00ff8855,inset 0 0 15px #00ff8811}
+/* QR box */
+.qr-box{width:88px;height:88px;border-radius:8px;border:3px solid var(--dim);display:flex;align-items:center;justify-content:center;margin:8px auto;transition:.5s;font-size:2rem}
+.qr-box.ok{border-color:var(--g);box-shadow:0 0 18px #00ff8844}
+/* Info rows */
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #00ff8810}
+.row:last-child{border:none}
+.rn{font-size:.72rem;color:var(--dim)}
+.rv{font-family:'Orbitron',monospace;font-size:.9rem;color:var(--g)}
+.rv.off{color:var(--r)} .rv.warn{color:var(--y)}
+/* Send group */
+.send-row{display:flex;gap:7px;margin-top:4px}
+.send-row input{margin:0;flex:1}
+.btn-s{background:var(--g);color:#000;border:none;padding:8px 14px;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;border-radius:4px;cursor:pointer;white-space:nowrap;transition:.2s;letter-spacing:1px}
+.btn-s:hover:not(:disabled){box-shadow:0 0 14px #00ff8855}
+.btn-s:disabled{opacity:.25;cursor:not-allowed}
+/* Terminal */
+.term{background:#000;border:1px solid #00ff8818;border-radius:8px;padding:14px;height:210px;overflow-y:auto;font-size:.78rem}
+.term::-webkit-scrollbar{width:3px} .term::-webkit-scrollbar-thumb{background:#00ff8833;border-radius:2px}
+.INFO{color:var(--g)} .ERROR{color:var(--r)} .WARN{color:var(--y)}
+</style>
+</head>
+<body>
+<header>
+  <div id="dot" class="pulse"></div>
+  <h1>⚡ SIMULADOR PLC INDUSTRIAL</h1>
+  <span id="statusTxt">● OFFLINE</span>
+</header>
+
+<div class="grid">
+  <!-- Panel izquierdo: Config -->
+  <div class="card">
+    <h3>🔧 Configuración</h3>
+    <label>IP SERVIDOR (Ethernet)</label>
+    <input id="cfgIp" value="192.168.10.11">
+    <label>PUERTO OPC UA</label>
+    <input id="cfgPort" value="4845">
+    <button id="btnStart" class="btn btn-g" onclick="iniciar()">▶ INICIAR SERVIDOR</button>
+    <button id="btnStop" class="btn btn-r" onclick="detener()" disabled>■ DETENER</button>
+
+    <div style="border-top:1px solid #00ff8811;margin-top:14px;padding-top:14px">
+      <h3 style="margin-bottom:10px">⚙ FORZAR VARIABLE</h3>
+      <label>VARIABLE</label>
+      <select id="ctrlVar">
+        <option>Temperatura</option><option>Presion</option>
+        <option>Motor_Encendido</option><option>Confirmacion_QR</option>
+      </select>
+      <label>NUEVO VALOR</label>
+      <div class="send-row">
+        <input id="ctrlVal" placeholder="Valor..." onkeydown="if(event.key==='Enter')enviar()">
+        <button id="btnSend" class="btn-s" onclick="enviar()" disabled>ENVIAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel central: Variables -->
+  <div class="card">
+    <h3>📊 Variables en Tiempo Real</h3>
+    <div class="gauges">
+      <!-- Temperatura -->
+      <div class="gc">
+        <div class="gl">TEMPERATURA</div>
+        <svg width="140" height="86" viewBox="0 0 140 86">
+          <path d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#0d1a10" stroke-width="10" stroke-linecap="round"/>
+          <path id="gT" d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#00ff88" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 175" style="transition:.5s ease"/>
+          <path id="gTg" d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#00ff8833" stroke-width="18" stroke-linecap="round" stroke-dasharray="0 175"/>
+          <text x="70" y="66" text-anchor="middle" fill="#2a5a3a" font-size="9" font-family="monospace">0 ─── 100 °C</text>
+        </svg>
+        <div class="gv" id="gvT" style="color:#00ff88">25.0 °C</div>
+      </div>
+      <!-- Presión -->
+      <div class="gc">
+        <div class="gl">PRESIÓN</div>
+        <svg width="140" height="86" viewBox="0 0 140 86">
+          <path d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#0a1520" stroke-width="10" stroke-linecap="round"/>
+          <path id="gP" d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#0088ff" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 175" style="transition:.5s ease"/>
+          <path id="gPg" d="M14 80 A56 56 0 0 1 126 80" fill="none" stroke="#0088ff33" stroke-width="18" stroke-linecap="round" stroke-dasharray="0 175"/>
+          <text x="70" y="66" text-anchor="middle" fill="#224466" font-size="9" font-family="monospace">0 ─── 300 PSI</text>
+        </svg>
+        <div class="gv" id="gvP" style="color:#0088ff">100 PSI</div>
+      </div>
+      <!-- Motor -->
+      <div class="gc">
+        <div class="gl">MOTOR</div>
+        <div id="motorRing" class="motor-ring">OFF</div>
+      </div>
+      <!-- QR -->
+      <div class="gc">
+        <div class="gl">CONFIRM QR</div>
+        <div id="qrBox" class="qr-box">❌</div>
+        <div style="font-size:.72rem;color:var(--dim)">Cat: <span id="catVal">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel derecho: Info -->
+  <div class="card">
+    <h3>🌐 Estado de Red</h3>
+    <div class="row"><span class="rn">SERVIDOR</span><span id="rStatus" class="rv off">OFFLINE</span></div>
+    <div class="row"><span class="rn">ENDPOINT</span><span id="rEndpoint" class="rv" style="font-size:.6rem;color:var(--dim)">—</span></div>
+    <div class="row"><span class="rn">TEMPERATURA</span><span id="rTemp" class="rv">25.0 °C</span></div>
+    <div class="row"><span class="rn">PRESIÓN</span><span id="rPres" class="rv">100 PSI</span></div>
+    <div class="row"><span class="rn">MOTOR</span><span id="rMotor" class="rv off">APAGADO</span></div>
+    <div class="row"><span class="rn">CAT. QR</span><span id="rCat" class="rv">0</span></div>
+    <div class="row"><span class="rn">CONFIRM QR</span><span id="rQR" class="rv off">NO</span></div>
+  </div>
+</div>
+
+<!-- Terminal -->
+<div class="term" id="term">
+  <div class="INFO">&gt; Sistema listo. Configura IP/Puerto y presiona INICIAR SERVIDOR.</div>
+</div>
+
+<script>
+const ARC = 175;
+let lastLen = 0;
+
+function gauge(id, val, min, max) {
+  const p = Math.max(0, Math.min(1, (val - min) / (max - min)));
+  const d = p * ARC;
+  document.getElementById(id).setAttribute('stroke-dasharray', `${d} ${ARC}`);
+  document.getElementById(id + 'g').setAttribute('stroke-dasharray', `${d} ${ARC}`);
+}
+
+async function iniciar() {
+  const ip = document.getElementById('cfgIp').value;
+  const port = parseInt(document.getElementById('cfgPort').value);
+  await fetch('/api/iniciar', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ip, port})
+  });
+}
+
+async function detener() {
+  await fetch('/api/detener', {method: 'POST'});
+}
+
+async function enviar() {
+  const nombre = document.getElementById('ctrlVar').value;
+  const valor = document.getElementById('ctrlVal').value;
+  if (!valor) return;
+  await fetch('/api/variable', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({nombre, valor})
+  });
+  document.getElementById('ctrlVal').value = '';
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/api/estado');
+    if (!res.ok) return;
+    const d = await res.json();
+    const on = d.running;
+
+    // Header
+    document.getElementById('dot').className = 'pulse' + (on ? ' on' : '');
+    document.getElementById('statusTxt').textContent = on ? '● ONLINE' : '● OFFLINE';
+    document.getElementById('statusTxt').style.color = on ? '#00ff88' : '#ff3344';
+
+    // Buttons
+    document.getElementById('btnStart').disabled = on;
+    document.getElementById('btnStop').disabled = !on;
+    document.getElementById('btnSend').disabled = !on;
+
+    // Right panel
+    document.getElementById('rStatus').textContent = on ? 'ONLINE' : 'OFFLINE';
+    document.getElementById('rStatus').className = 'rv' + (on ? '' : ' off');
+    document.getElementById('rEndpoint').textContent = d.endpoint || '—';
+
+    if (d.variables) {
+      const v = d.variables;
+
+      // Temperatura gauge
+      const t = parseFloat(v.Temperatura ?? 25);
+      const tc = t > 70 ? '#ff3344' : t > 50 ? '#ffaa00' : '#00ff88';
+      document.getElementById('gT').setAttribute('stroke', tc);
+      document.getElementById('gTg').setAttribute('stroke', tc + '33');
+      document.getElementById('gvT').style.color = tc;
+      document.getElementById('gvT').textContent = t.toFixed(1) + ' °C';
+      gauge('gT', t, 0, 100);
+      document.getElementById('rTemp').textContent = t.toFixed(1) + ' °C';
+      document.getElementById('rTemp').className = 'rv' + (t > 70 ? ' off' : t > 50 ? ' warn' : '');
+
+      // Presion gauge
+      const p = parseInt(v.Presion ?? 100);
+      document.getElementById('gvP').textContent = p + ' PSI';
+      gauge('gP', p, 0, 300);
+      document.getElementById('rPres').textContent = p + ' PSI';
+
+      // Motor
+      const mOn = parseInt(v.Motor_Encendido) === 1;
+      const mEl = document.getElementById('motorRing');
+      mEl.textContent = mOn ? 'ON' : 'OFF';
+      mEl.className = 'motor-ring' + (mOn ? ' on' : '');
+      document.getElementById('rMotor').textContent = mOn ? 'ENCENDIDO' : 'APAGADO';
+      document.getElementById('rMotor').className = 'rv' + (mOn ? '' : ' off');
+
+      // QR
+      const qrOk = v.Confirmacion_QR === true || v.Confirmacion_QR === 'True';
+      const cat = v.Categoria_QR ?? 0;
+      document.getElementById('qrBox').textContent = qrOk ? '✅' : '❌';
+      document.getElementById('qrBox').className = 'qr-box' + (qrOk ? ' ok' : '');
+      document.getElementById('catVal').textContent = cat;
+      document.getElementById('rCat').textContent = cat;
+      document.getElementById('rQR').textContent = qrOk ? 'SÍ' : 'NO';
+      document.getElementById('rQR').className = 'rv' + (qrOk ? '' : ' off');
+    }
+
+    // Logs
+    if (d.logs && d.logs.length !== lastLen) {
+      const term = document.getElementById('term');
+      const atBottom = term.scrollTop + term.clientHeight >= term.scrollHeight - 10;
+      const newLogs = d.logs.slice(lastLen);
+      newLogs.forEach(l => {
+        const div = document.createElement('div');
+        div.className = l.level;
+        div.textContent = `[${l.time}] [${l.level}] ${l.msg}`;
+        term.appendChild(div);
+      });
+      lastLen = d.logs.length;
+      if (atBottom) term.scrollTop = term.scrollHeight;
+    }
+  } catch(_) {}
+}
+
+setInterval(poll, 1000);
+poll();
+</script>
+</body>
+</html>
