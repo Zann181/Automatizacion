@@ -54,7 +54,7 @@ De manera concurrente, el sistema transmite la telemetría del proceso a través
 
 ### 3.2 Requerimientos No Funcionales (RNF)
 * **RNF1 (Presupuesto de Latencia):** El tiempo total de respuesta ($T_{\text{total}}$) desde la captura del frame con movimiento hasta la recepción de la señal de parada en el PLC **DEBE** ser $\le 500\text{ms}$:
-  $$T_{\text{total}} = T_{\text{stream}} + T_{\text{procesamiento\_movimiento}} + T_{\text{red\_OPC}} + T_{\text{scan\_PLC}} \le 500\text{ms}$$
+  $$T_{\text{total}} = T_{\text{stream}} + T_{\text{procesamiento de movimiento}} + T_{\text{red OPC}} + T_{\text{scan PLC}} \le 500\text{ms}$$
 * **RNF2 (Interoperabilidad):** La comunicación de variables del proceso entre la Raspberry Pi y el PLC Siemens S7-1200 **DEBE** realizarse mediante el estándar OPC UA (Puerto 4840).
 * **RNF3 (Integridad de Datos y Seguridad):** La interfaz de escaneo de la cámara **DEBE** servirse sobre HTTPS seguro (TLS/SSL) para habilitar el uso nativo de sensores de cámara de navegador móvil. Las transmisiones hacia la nube (Google Sheets) **DEBEN** implementarse de forma diferida garantizando $0\%$ de pérdida de datos de conteo ante caídas de red.
 
@@ -182,7 +182,7 @@ La secuencia física es coordinada asíncronamente en el backend mediante corrut
 
 ### 7.3 Cooldown Dinámico del Escáner
 Para evitar múltiples lecturas del mismo código QR en tránsito o interferencias visuales del operario, la cámara activa un estado inactivo de protección o **Cooldown** calculado mediante:
-$$T_{\text{cooldown}} = T_{\text{travel\_time}} + T_{\text{duration}} + 2.5\text{s}$$
+$$T_{\text{cooldown}} = T_{\text{travel time}} + T_{\text{duration}} + 2.5\text{s}$$
 Durante este intervalo, el lector QR y el detector de movimiento no procesan frames, reactivándose automáticamente al finalizar el tiempo.
 
 ---
@@ -191,7 +191,7 @@ Durante este intervalo, el lector QR y el detector de movimiento no procesan fra
 
 ### 8.1 Diagrama de la Interfaz Web
 ```mermaid
-graph TD
+graph LR
     subgraph Cliente["Cliente (Navegador Web)"]
         UI_Dash["Dashboard (index.html)"]
         UI_Cam["Escáner (camera.html)"]
@@ -220,7 +220,7 @@ graph TD
     
     JS_Dash -- "1. Consulta estado (250ms)" --> API_Status
     JS_Dash -- "2. Obtiene/Guarda ajustes" --> API_Settings
-    JS_Dash -- "3. Consulta/Limpia logs" --> API_Logs
+    JS_Dash -- "3. Consulta/Limpia logs" --> API_Logs & API_LogsClear
     JS_Dash -- "4. Control motor (Encender/Velocidad)" --> API_MotorSpeed & API_MotorToggle
     JS_Dash -- "5. Prueba de pistones manual" --> API_CatToggle
     
@@ -232,7 +232,7 @@ graph TD
 
 ### 8.2 Diagrama de la Lógica del Sistema
 ```mermaid
-graph TD
+graph LR
     subgraph Backend["Backend FastAPI (servidor(new).py)"]
         FastAPI_App["FastAPI App Core"]
         
@@ -283,7 +283,7 @@ graph TD
 
 ### 8.3 Diagrama de Conexiones y Red
 ```mermaid
-graph TD
+graph LR
     subgraph Red_Industrial["Red LAN Industrial (Wi-Fi / Ethernet)"]
         PC_Servidor["PC / Raspberry Pi (Servidor FastAPI)"]
         S7_1200["PLC Siemens S7-1200"]
