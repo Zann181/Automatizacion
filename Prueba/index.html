@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard de Monitoreo y Control del Clasificador QR Industrial">
+    <title>Dashboard | Clasificador Industrial</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+    <!-- BANNER DE ADVERTENCIA DE CONEXIÓN PLC (INVASIVO SI SE DETECTA PÉRDIDA) -->
+    <div id="plc-warning-banner" class="warning-banner hidden">
+        <div class="banner-content">
+            <span class="banner-icon">⚠️</span>
+            <div class="banner-text">
+                <h3>CONEXIÓN PERDIDA CON EL PLC</h3>
+                <p>Intentando reconectar en opc.tcp://192.168.0.1:4840... Los controles remotos del PLC están temporalmente deshabilitados.</p>
+            </div>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- HEADER DE LA PÁGINA -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <span class="logo-icon">⚙️</span>
+                <div>
+                    <h1>CLASIFICADOR INDUSTRIAL</h1>
+                    <p class="subtitle">Mapeo de Sensores, QR y Actuadores PLC</p>
+                </div>
+            </div>
+            
+            <div class="status-badges">
+                <!-- Estado PLC -->
+                <div class="badge" id="plc-status-badge">
+                    <span class="status-dot red" id="plc-dot"></span>
+                    <span class="badge-text" id="plc-text">PLC: Desconectado</span>
+                </div>
+                <!-- Estado Google Sheets -->
+                <div class="badge" id="sheets-status-badge">
+                    <span class="status-dot red" id="sheets-dot"></span>
+                    <span class="badge-text" id="sheets-text">Nube: Desconectada</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- SECCIÓN 1: CONTROLES EN TIEMPO REAL -->
+        <section class="card control-card">
+            <div class="card-header">
+                <h2>Control de Banda Transportadora</h2>
+                <span class="card-tag">Tiempo Real</span>
+            </div>
+            
+            <!-- Motor Switch -->
+            <div class="control-group">
+                <label class="control-label">Estado del Motor</label>
+                <div class="toggle-container">
+                    <button id="motor-toggle-btn" class="motor-btn stopped">
+                        <span class="motor-icon">OFF</span>
+                        <span class="motor-btn-text">Encender Motor</span>
+                    </button>
+                    <div class="motor-led" id="motor-led"></div>
+                </div>
+            </div>
+
+            <!-- Motor Speed Slider (1-60) -->
+            <div class="control-group">
+                <div class="slider-header">
+                    <label class="control-label" for="speed-slider">Velocidad del Motor (Hz / RPM)</label>
+                    <span id="speed-value" class="mono-value">30</span>
+                </div>
+                <input type="range" id="speed-slider" min="1" max="60" value="30" class="premium-slider">
+                <div class="slider-ticks">
+                    <span>1</span>
+                    <span>15</span>
+                    <span>30</span>
+                    <span>45</span>
+                    <span>60</span>
+                </div>
+            </div>
+
+            <!-- Actuadores Visión Directa -->
+            <div class="actuators-status">
+                <h3>Estado de Actuadores (PLC)</h3>
+                <div class="actuator-grid">
+                    <div class="actuator-item" id="act-c1">
+                        <span class="act-name">Pistón 1 (Cat 1)</span>
+                        <span class="act-led" id="led-c1"></span>
+                    </div>
+                    <div class="actuator-item" id="act-c2">
+                        <span class="act-name">Pistón 2 (Cat 2)</span>
+                        <span class="act-led" id="led-c2"></span>
+                    </div>
+                    <div class="actuator-item" id="act-c3">
+                        <span class="act-name">Salida (Cat 3)</span>
+                        <span class="act-led" id="led-c3"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulación de Escaneo (Pruebas) -->
+            <div class="test-panel">
+                <h3>Simular Escaneo (Pruebas)</h3>
+                <div class="test-btn-grid">
+                    <button type="button" class="test-btn t-c1" onclick="testScan(1)">Cat 1</button>
+                    <button type="button" class="test-btn t-c2" onclick="testScan(2)">Cat 2</button>
+                    <button type="button" class="test-btn t-c3" onclick="testScan(3)">Cat 3</button>
+                </div>
+            </div>
+
+            <!-- Botón Cámara -->
+            <div class="camera-link-wrap">
+                <a href="camera.html" class="camera-btn">
+                    <span class="btn-icon">📷</span>
+                    <span>Abrir Cámara Escáner</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: ESTADÍSTICAS Y MÁS -->
+        <section class="card stats-card">
+            <div class="card-header">
+                <h2>Estadísticas de Clasificación</h2>
+                <span class="card-tag">Histórico</span>
+            </div>
+            
+            <div class="total-counter">
+                <span class="counter-label">Total Cajas Procesadas</span>
+                <h3 id="stat-total" class="counter-number">0</h3>
+            </div>
+
+            <div class="category-bars">
+                <!-- Categoria 1 -->
+                <div class="bar-group">
+                    <div class="bar-info">
+                        <span class="bar-label">Categoría 1 (Pistón 1)</span>
+                        <span id="count-cat1" class="bar-count">0</span>
+                    </div>
+                    <div class="bar-track">
+                        <div id="bar-cat1" class="bar-fill cat1" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Categoria 2 -->
+                <div class="bar-group">
+                    <div class="bar-info">
+                        <span class="bar-label">Categoría 2 (Pistón 2)</span>
+                        <span id="count-cat2" class="bar-count">0</span>
+                    </div>
+                    <div class="bar-track">
+                        <div id="bar-cat2" class="bar-fill cat2" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Categoria 3 -->
+                <div class="bar-group">
+                    <div class="bar-info">
+                        <span class="bar-label">Categoría 3 (Al Final)</span>
+                        <span id="count-cat3" class="bar-count">0</span>
+                    </div>
+                    <div class="bar-track">
+                        <div id="bar-cat3" class="bar-fill cat3" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: AJUSTES DE TIEMPOS PLC -->
+        <section class="card settings-card">
+            <div class="card-header">
+                <h2>Configuración de Tiempos y Sensibilidad</h2>
+                <span class="card-tag">Parámetros</span>
+            </div>
+
+            <form id="settings-form" class="settings-form">
+                <!-- QR Stop Delay -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="initial_delay">Tiempo de parada QR (s)</label>
+                        <input type="number" id="initial_delay" name="initial_delay" step="0.1" min="0.1" max="10.0" value="1.0" required>
+                        <span class="help-text">Segundos de detención del motor al entrar una caja para enfocar y escanear.</span>
+                    </div>
+                </div>
+
+                <hr class="form-divider">
+                <h3>Tiempos de Desplazamiento y Pistón</h3>
+
+                <!-- Category 1 Times -->
+                <div class="form-row flex-row">
+                    <div class="form-group">
+                        <label for="cat1_travel_time">Cat 1: Viaje (s)</label>
+                        <input type="number" id="cat1_travel_time" name="cat1_travel_time" step="0.1" min="0.0" max="20.0" value="2.0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cat1_duration">Cat 1: Pistón (s)</label>
+                        <input type="number" id="cat1_duration" name="cat1_duration" step="0.1" min="0.1" max="10.0" value="2.0" required>
+                    </div>
+                </div>
+
+                <!-- Category 2 Times -->
+                <div class="form-row flex-row">
+                    <div class="form-group">
+                        <label for="cat2_travel_time">Cat 2: Viaje (s)</label>
+                        <input type="number" id="cat2_travel_time" name="cat2_travel_time" step="0.1" min="0.0" max="20.0" value="4.0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cat2_duration">Cat 2: Pistón (s)</label>
+                        <input type="number" id="cat2_duration" name="cat2_duration" step="0.1" min="0.1" max="10.0" value="2.0" required>
+                    </div>
+                </div>
+
+                <!-- Category 3 Times -->
+                <div class="form-row flex-row">
+                    <div class="form-group">
+                        <label for="cat3_travel_time">Cat 3: Viaje (s)</label>
+                        <input type="number" id="cat3_travel_time" name="cat3_travel_time" step="0.1" min="0.0" max="20.0" value="0.0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cat3_duration">Cat 3: Indicador (s)</label>
+                        <input type="number" id="cat3_duration" name="cat3_duration" step="0.1" min="0.1" max="10.0" value="2.0" required>
+                    </div>
+                </div>
+
+                <hr class="form-divider">
+
+                <!-- Sensitivity Slider -->
+                <div class="form-group">
+                    <div class="slider-header">
+                        <label for="sensitivity">Sensibilidad de Detección Cámara</label>
+                        <span id="sensitivity-value" class="mono-value">15</span>
+                    </div>
+                    <input type="range" id="sensitivity" name="sensitivity" min="1" max="100" value="15" class="premium-slider">
+                    <span class="help-text">Valores más bajos aumentan la sensibilidad del sensor de movimiento de la cámara.</span>
+                </div>
+
+                <hr class="form-divider">
+                <h3>Conexión del PLC</h3>
+
+                <!-- PLC URL -->
+                <div class="form-group">
+                    <label for="plc_url">Dirección URL del PLC OPC UA</label>
+                    <input type="text" id="plc_url" name="plc_url" value="opc.tcp://192.168.0.1:4840" required>
+                    <span class="help-text">URL del servidor OPC UA de tu PLC S7-1200.</span>
+                </div>
+
+                <hr class="form-divider">
+                <h3>Sincronización en la Nube</h3>
+
+                <!-- Google Sheets Webhook URL -->
+                <div class="form-group">
+                    <label for="google_sheets_url">Google Apps Script Webhook URL</label>
+                    <input type="url" id="google_sheets_url" name="google_sheets_url" placeholder="https://script.google.com/macros/s/.../exec">
+                    <span class="help-text">URL del Webhook de Google Apps Script para guardar en tu hoja de cálculo.</span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn" id="save-settings-btn">Guardar Parámetros</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN 4: REPORTE E HISTORIAL DE ESCANEOS -->
+        <section class="card log-card">
+            <div class="card-header">
+                <h2>Historial de Escaneos (Reporte de Cajas)</h2>
+                <div class="header-actions">
+                    <button id="clear-logs-btn" class="clear-btn">Limpiar Historial</button>
+                    <span class="card-tag">Base de Datos</span>
+                </div>
+            </div>
+
+            <!-- Tabla de Logs -->
+            <div class="table-wrapper">
+                <table class="logs-table" id="logs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha/Hora</th>
+                            <th>Código QR</th>
+                            <th>Categoría</th>
+                            <th>Estado Sync</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                        <tr>
+                            <td colspan="5" class="loading-td">Cargando historial...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- NOTIFICACIONES TOAST -->
+    <div id="toast-wrap" class="toast-wrap"></div>
+
+    <!-- ADVERTENCIA NO INVASIVA DE GOOGLE SHEETS -->
+    <div id="sheets-warning-toast" class="sheets-warning-toast hidden">
+        <span class="toast-warning-icon">☁️⚠️</span>
+        <div class="toast-warning-body">
+            <h4>Respaldo Local Activado</h4>
+            <p>No se puede conectar con Google Sheets. Los escaneos se guardan localmente en SQLite.</p>
+        </div>
+    </div>
+
+    <!-- JS Controlador -->
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

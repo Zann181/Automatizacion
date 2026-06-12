@@ -21,7 +21,7 @@
   "motor_speed": {
     "node_id": "ns=4;i=4",
     "type": "Int16",
-    "value": 0,
+    "value": 1,
     "description": ""
   },
   "DeviceManual": {
