@@ -7,6 +7,7 @@ const API_BASE = ""; // API Base URL local
 // Estado
 let isDraggingSlider = false;
 let lastServerSpeed = 30;
+let lastTotalScans = -1;
 
 // Elementos DOM
 const plcBanner = document.getElementById("plc-warning-banner");
@@ -52,7 +53,7 @@ window.addEventListener("load", () => {
     
     // Iniciar sondeador de estado
     updateStatus();
-    setInterval(updateStatus, 1000);
+    setInterval(updateStatus, 250); // Muestreo rápido a 250ms para actualización en tiempo real
     
     // Iniciar sondeador de logs
     loadLogs();
@@ -168,6 +169,12 @@ async function updateStatus() {
         // 6. Estadísticas
         updateStats(status);
         
+        // Recargar logs instantáneamente si el total de escaneos ha cambiado
+        if (lastTotalScans !== -1 && lastTotalScans !== status.total_scans) {
+            loadLogs();
+        }
+        lastTotalScans = status.total_scans;
+        
     } catch (e) {
         // En caso de caída de API total, tratar como PLC desconectado
         plcBanner.classList.remove("hidden");
@@ -210,6 +217,7 @@ async function setMotorSpeed(speed) {
         });
         if (res.ok) {
             showToast(`Velocidad ajustada a ${speed} Hz`, "success");
+            updateStatus(); // Actualización inmediata
         } else {
             showToast("Error en API al cambiar velocidad", "error");
         }
@@ -229,6 +237,7 @@ async function toggleMotor() {
         });
         if (res.ok) {
             showToast(isRunning ? "Motor apagado" : "Motor encendido", "success");
+            updateStatus(); // Actualización inmediata
         } else {
             showToast("Error en API al togglear motor", "error");
         }
@@ -396,6 +405,7 @@ async function testScan(category) {
         });
         if (res.ok) {
             showToast(`Simulación Cat ${category} enviada al servidor`, "success");
+            updateStatus(); // Actualización inmediata
             // Recargar logs y estadísticas en breve
             setTimeout(() => {
                 loadLogs();
@@ -419,6 +429,7 @@ async function toggleCategory(category, state) {
         });
         if (res.ok) {
             showToast(`Categoría ${category} cambiada a ${state ? 'ENCENDIDA (True)' : 'APAGADA (False)'}`, "success");
+            updateStatus(); // Actualización inmediata
         } else {
             showToast(`Error al cambiar Categoría ${category}`, "error");
             document.getElementById(`toggle-c${category}`).checked = !state;

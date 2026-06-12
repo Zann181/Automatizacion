@@ -17,7 +17,7 @@ const VIDEO_CONSTRAINTS = {
 
 // Intervalos
 const SCAN_INTERVAL_MS = 60;    // ~16 análisis/seg
-const SERVER_PING_MS   = 3000;
+const SERVER_PING_MS   = 1000;
 
 // Estado global de la cámara
 let videoStream    = null;

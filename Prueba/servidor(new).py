@@ -194,18 +194,7 @@ def check_ssl_certs():
 # INTERACCIÓN CON PLC (FÍSICO / SIMULADOR)
 # ---------------------------------------------------------
 async def get_plc_value(name: str, node_id: str, var_type: str):
-    global plc_connected, plc_client, simulated_plc
-    if plc_connected:
-        try:
-            node = plc_client.get_node(node_id)
-            val = await node.read_value()
-            if var_type == "Boolean":
-                return bool(val)
-            elif var_type in ("Int16", "Int32", "UInt16", "UInt32"):
-                return int(val)
-            return val
-        except Exception as e:
-            print(f"PLC: Error de lectura en '{name}': {e}")
+    global simulated_plc
     return simulated_plc.get(name, False if var_type == "Boolean" else 0)
 
 async def set_plc_value(name: str, node_id: str, val, var_type: str):
@@ -296,6 +285,36 @@ async def run_conveyor_logic(category: int):
 # ---------------------------------------------------------
 # TAREAS EN SEGUNDO PLANO (WORKERS)
 # ---------------------------------------------------------
+async def plc_cache_sync_loop():
+    global plc_connected, plc_client, simulated_plc
+    while True:
+        if plc_connected and plc_client:
+            try:
+                # Obtener todos los nodos a leer en paralelo
+                nodes = []
+                names = []
+                for name, info in PLC_NODES.items():
+                    nodes.append(plc_client.get_node(info["node_id"]))
+                    names.append(name)
+                
+                # Leer todos los valores usando asyncio.gather (altamente eficiente)
+                tasks = [node.read_value() for node in nodes]
+                values = await asyncio.wait_for(asyncio.gather(*tasks), timeout=1.5)
+                
+                # Actualizar el caché en memoria
+                for name, val in zip(names, values):
+                    var_type = PLC_NODES[name]["type"]
+                    if var_type == "Boolean":
+                        simulated_plc[name] = bool(val)
+                    elif var_type in ("Int16", "Int32", "UInt16", "UInt32"):
+                        simulated_plc[name] = int(val)
+                    else:
+                        simulated_plc[name] = val
+            except Exception as e:
+                # Error silencioso en el cache para evitar sobrecargar los logs de la terminal
+                pass
+        await asyncio.sleep(0.2) # Actualizar cada 200ms
+
 async def plc_reconnection_loop():
     global plc_connected, plc_client
     while True:
@@ -316,9 +335,13 @@ async def plc_reconnection_loop():
                 except Exception as ex:
                     print(f"PLC: Error al encender el motor por defecto: {ex}")
                 
-                # Leer velocidad inicial de arranque
-                speed = await get_plc_value("motor_speed", PLC_NODES["motor_speed"]["node_id"], "Int16")
-                simulated_plc["motor_speed"] = speed
+                # Leer velocidad inicial de arranque directamente del nodo PLC
+                try:
+                    node = plc_client.get_node(PLC_NODES["motor_speed"]["node_id"])
+                    speed = await node.read_value()
+                    simulated_plc["motor_speed"] = int(speed)
+                except Exception as ex:
+                    print(f"PLC: Error al leer la velocidad de arranque inicial: {ex}")
             except Exception as e:
                 plc_connected = False
                 # print(f"PLC: Fallo en conexión ({e}). Reintentando...")
@@ -422,12 +445,42 @@ async def lifespan(app: FastAPI):
     # Lanzar hilos de trabajo asíncronos
     reconnect_task = asyncio.create_task(plc_reconnection_loop())
     sync_task = asyncio.create_task(sheets_sync_loop())
+    cache_task = asyncio.create_task(plc_cache_sync_loop())
+    
+    # Descubrir e imprimir IPs locales para otros dispositivos
+    import socket
+    print("\n" + "="*60)
+    print("ACCESO DESDE OTROS DISPOSITIVOS (MOVILES / TABLETS):")
+    print("Asegurate de estar en la misma red Wi-Fi/LAN y usa cualquiera de estas URLs:")
+    print("  - Local: https://localhost:8000")
+    try:
+        hostname = socket.gethostname()
+        local_ips = set()
+        for ip in socket.gethostbyname_ex(hostname)[2]:
+            if not ip.startswith("127."):
+                local_ips.add(ip)
+        
+        # Intentar obtener la IP activa de salida a internet/red
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ips.add(s.getsockname()[0])
+            s.close()
+        except:
+            pass
+            
+        for ip in sorted(local_ips):
+            print(f"  - Red:   https://{ip}:8000")
+    except Exception:
+        pass
+    print("="*60 + "\n")
     
     yield
     
     # Cancelar tareas
     reconnect_task.cancel()
     sync_task.cancel()
+    cache_task.cancel()
     if plc_client and plc_connected:
         try:
             await plc_client.disconnect()
@@ -633,6 +686,34 @@ async def notificar_categoria(datos: EtiquetaDetectada):
 # ---------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
+    import socket
+    
+    # Descubrir e imprimir IPs locales para otros dispositivos al iniciar en consola
+    print("\n" + "="*60)
+    print("SERVIDORES DE ACCESO DISPONIBLES EN TU RED:")
+    print("Asegurate de estar en la misma red Wi-Fi/LAN y usa cualquiera:")
+    print("  -> Local:  https://localhost:8000")
+    try:
+        hostname = socket.gethostname()
+        local_ips = set()
+        for ip in socket.gethostbyname_ex(hostname)[2]:
+            if not ip.startswith("127."):
+                local_ips.add(ip)
+        
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ips.add(s.getsockname()[0])
+            s.close()
+        except:
+            pass
+            
+        for ip in sorted(local_ips):
+            print(f"  -> Red:    https://{ip}:8000")
+    except Exception:
+        pass
+    print("="*60 + "\n")
+
     # Inicia uvicorn en puerto 8000 con soporte SSL
     uvicorn.run(
         "servidor(new):app", 
