@@ -1,4 +1,6 @@
 asyncua
-flask
-sqlalchemy
+fastapi
+pydantic
+uvicorn
+cryptography
 aiosqlite

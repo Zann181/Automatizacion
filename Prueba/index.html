@@ -91,16 +91,34 @@
                 <h3>Estado de Actuadores (PLC)</h3>
                 <div class="actuator-grid">
                     <div class="actuator-item" id="act-c1">
-                        <span class="act-name">Pistón 1 (Cat 1)</span>
-                        <span class="act-led" id="led-c1"></span>
+                        <div class="actuator-left">
+                            <span class="act-led" id="led-c1"></span>
+                            <span class="act-name">Pistón 1 (Cat 1)</span>
+                        </div>
+                        <label class="switch-toggle">
+                            <input type="checkbox" id="toggle-c1" onchange="toggleCategory(1, this.checked)">
+                            <span class="switch-slider"></span>
+                        </label>
                     </div>
                     <div class="actuator-item" id="act-c2">
-                        <span class="act-name">Pistón 2 (Cat 2)</span>
-                        <span class="act-led" id="led-c2"></span>
+                        <div class="actuator-left">
+                            <span class="act-led" id="led-c2"></span>
+                            <span class="act-name">Pistón 2 (Cat 2)</span>
+                        </div>
+                        <label class="switch-toggle">
+                            <input type="checkbox" id="toggle-c2" onchange="toggleCategory(2, this.checked)">
+                            <span class="switch-slider"></span>
+                        </label>
                     </div>
                     <div class="actuator-item" id="act-c3">
-                        <span class="act-name">Salida (Cat 3)</span>
-                        <span class="act-led" id="led-c3"></span>
+                        <div class="actuator-left">
+                            <span class="act-led" id="led-c3"></span>
+                            <span class="act-name">Salida (Cat 3)</span>
+                        </div>
+                        <label class="switch-toggle">
+                            <input type="checkbox" id="toggle-c3" onchange="toggleCategory(3, this.checked)">
+                            <span class="switch-slider"></span>
+                        </label>
                     </div>
                 </div>
             </div>

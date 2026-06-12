@@ -308,6 +308,14 @@ async def plc_reconnection_loop():
                 await asyncio.wait_for(plc_client.connect(), timeout=3.0)
                 plc_connected = True
                 print("PLC: Conectado exitosamente!")
+                
+                # Forzar motor encendido por defecto al conectar
+                try:
+                    await set_plc_value("motor_state", PLC_NODES["motor_state"]["node_id"], True, "Boolean")
+                    print("PLC: Motor encendido por defecto al iniciar conexion.")
+                except Exception as ex:
+                    print(f"PLC: Error al encender el motor por defecto: {ex}")
+                
                 # Leer velocidad inicial de arranque
                 speed = await get_plc_value("motor_speed", PLC_NODES["motor_speed"]["node_id"], "Int16")
                 simulated_plc["motor_speed"] = speed
@@ -468,6 +476,10 @@ class MotorSpeedInput(BaseModel):
 class MotorToggleInput(BaseModel):
     state: bool
 
+class CategoryToggleInput(BaseModel):
+    category: int
+    state: bool
+
 # ---------------------------------------------------------
 # ENDPOINTS API REST
 # ---------------------------------------------------------
@@ -522,6 +534,15 @@ async def set_motor_speed(data: MotorSpeedInput):
 async def toggle_motor(data: MotorToggleInput):
     success = await set_plc_value("motor_state", PLC_NODES["motor_state"]["node_id"], data.state, "Boolean")
     return {"status": "success" if success else "simulated", "state": data.state}
+
+@app.post("/api/category/toggle")
+async def toggle_category(data: CategoryToggleInput):
+    if data.category not in (1, 2, 3):
+        raise HTTPException(status_code=400, detail="Categoria invalida. Debe ser 1, 2 o 3.")
+    name = f"Categoria{data.category}"
+    node_id = PLC_NODES[name]["node_id"]
+    success = await set_plc_value(name, node_id, data.state, "Boolean")
+    return {"status": "success" if success else "simulated", "category": data.category, "state": data.state}
 
 @app.get("/api/settings")
 async def get_settings_api():

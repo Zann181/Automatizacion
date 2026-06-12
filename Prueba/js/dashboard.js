@@ -160,6 +160,11 @@ async function updateStatus() {
         updateActuatorLed(ledC2, status.categoria2_state);
         updateActuatorLed(ledC3, status.categoria3_state);
         
+        // Sincronizar checkboxes de las categorías
+        document.getElementById("toggle-c1").checked = status.categoria1_state;
+        document.getElementById("toggle-c2").checked = status.categoria2_state;
+        document.getElementById("toggle-c3").checked = status.categoria3_state;
+        
         // 6. Estadísticas
         updateStats(status);
         
@@ -401,5 +406,25 @@ async function testScan(category) {
         }
     } catch (e) {
         showToast("Error de conexión al simular escaneo", "error");
+    }
+}
+
+// Control manual de categorías mediante deslizador (switch toggle)
+async function toggleCategory(category, state) {
+    try {
+        const res = await fetch(`${API_BASE}/api/category/toggle`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ category: category, state: state })
+        });
+        if (res.ok) {
+            showToast(`Categoría ${category} cambiada a ${state ? 'ENCENDIDA (True)' : 'APAGADA (False)'}`, "success");
+        } else {
+            showToast(`Error al cambiar Categoría ${category}`, "error");
+            document.getElementById(`toggle-c${category}`).checked = !state;
+        }
+    } catch (e) {
+        showToast("Error de conexión al cambiar la categoría", "error");
+        document.getElementById(`toggle-c${category}`).checked = !state;
     }
 }

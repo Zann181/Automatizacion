@@ -540,6 +540,12 @@ body:has(.warning-banner:not(.hidden)) .main-header {
     font-size: 0.85rem;
 }
 
+.actuator-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .act-name {
     font-weight: 500;
 }
@@ -556,6 +562,54 @@ body:has(.warning-banner:not(.hidden)) .main-header {
     background: var(--accent);
     box-shadow: 0 0 10px var(--accent);
 }
+
+/* Sliding Switch Toggles for Actuators */
+.switch-toggle {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+}
+
+.switch-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #334155;
+    transition: var(--transition-smooth);
+    border-radius: 20px;
+}
+
+.switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: var(--transition-smooth);
+    border-radius: 50%;
+}
+
+.switch-toggle input:checked + .switch-slider {
+    background-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.switch-toggle input:checked + .switch-slider:before {
+    transform: translateX(18px);
+}
+
 
 /* Camera Link Button */
 .camera-link-wrap {
