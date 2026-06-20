@@ -4,7 +4,9 @@
 **Materia:** Sistemas Linux Embebidos  
 **Presentado por:**  
 * Santiago Alexander Zambrano Chicunque  
-* Santiago Bustamante Montoya  
+* Santiago Bustamante Montoya
+
+--- 
 **Materia:** Automatizacion industrial  
 **Presentado por:**  
 * Santiago Alexander Zambrano Chicunque  
