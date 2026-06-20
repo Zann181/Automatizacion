@@ -5,6 +5,11 @@
 **Presentado por:**  
 * Santiago Alexander Zambrano Chicunque  
 * Santiago Bustamante Montoya  
+**Materia:** Automatizacion industrial  
+**Presentado por:**  
+* Santiago Alexander Zambrano Chicunque  
+* Diego Alejandro García de los Ríos
+* Arthur Alexander Portilla
 
 ---
 
